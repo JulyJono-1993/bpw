@@ -213,11 +213,21 @@ create table if not exists site_settings (
   "regionName"    text,
   "primaryColor"  text,
   "secondaryColor" text,
-  "backgroundColor" text
+  "backgroundColor" text,
+   "locationName"  text,
+   "latitude"      text,
+   "longitude"     text,
+   "locationMode"  text default 'manual',
+   "showWeather"   boolean default true
 );
 
 -- Migrasi: tambahkan kolom jika schema lama sudah dijalankan sebelumnya
 alter table site_settings add column if not exists "backgroundColor" text;
+alter table site_settings add column if not exists "locationName" text;
+alter table site_settings add column if not exists "latitude" text;
+alter table site_settings add column if not exists "longitude" text;
+alter table site_settings add column if not exists "locationMode" text default 'manual';
+alter table site_settings add column if not exists "showWeather" boolean default true;
 
 alter table site_settings enable row level security;
 create policy "public_read_site_settings" on site_settings for select using (true);
@@ -229,9 +239,17 @@ create policy "anon_write_site_settings"  on site_settings for all using (true) 
 create policy "anon_write_admins" on admins for all using (true) with check (true);
 
 -- Seed pengaturan awal
-insert into site_settings ("id", "orgName", "regionName", "primaryColor", "secondaryColor", "backgroundColor") values
-('default', 'BPW P3UW', 'Wilayah Lampung Timur', '#00dddd', '#89ceff', '#0b1326')
+insert into site_settings ("id", "orgName", "regionName", "primaryColor", "secondaryColor", "backgroundColor", "locationName", "latitude", "longitude", "showWeather") values
+('default', 'BPW P3UW', 'Wilayah Lampung Timur', '#00dddd', '#89ceff', '#0b1326', 'Labuhan Maringgai, Lampung Timur', '-5.3833', '105.4667', true)
 on conflict ("id") do nothing;
+
+-- Update baris yang sudah ada agar kolom baru terisi
+update site_settings set
+  "locationName" = coalesce("locationName", 'Labuhan Maringgai, Lampung Timur'),
+  "latitude" = coalesce("latitude", '-5.3833'),
+  "longitude" = coalesce("longitude", '105.4667'),
+  "showWeather" = coalesce("showWeather", true)
+where "id" = 'default';
 
 -- Aktifkan Realtime agar perubahan tema/settings langsung tersebar ke
 -- semua tab/instance yang terbuka (tanpa perlu refresh).
@@ -246,6 +264,27 @@ begin
     alter publication supabase_realtime add table site_settings;
   end if;
 end $$;
+
+-- ===========================================================================
+-- Tabel: weather_cache (snapshot cuaca & pasang surut dari Open-Meteo)
+-- Data tidak dihitung di server, melainkan di-fetch dari Open-Meteo di
+-- browser lalu disimpan ke sini agar tetap tersedia (cache) dan bisa dibaca
+-- ulang jika API sedang gagal. Satu baris per lokasi (kunci = koordinat).
+-- ===========================================================================
+create table if not exists weather_cache (
+  "id"           text primary key,
+  "latitude"     text,
+  "longitude"    text,
+  "locationName" text,
+  "payload"      jsonb,
+  "fetchedAt"    timestamptz default now()
+);
+
+alter table weather_cache enable row level security;
+create policy "public_read_weather_cache" on weather_cache for select using (true);
+create policy "anon_write_weather_cache"  on weather_cache for all using (true) with check (true);
+
+grant select, insert, update, delete on table weather_cache to anon, authenticated;
 
 -- ===========================================================================
 -- GRANT akses ke role anon & authenticated

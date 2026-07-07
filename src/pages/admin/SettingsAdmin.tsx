@@ -156,6 +156,76 @@ export default function SettingsAdmin() {
             </div>
           </div>
         </div>
+
+        {/* Lokasi Cuaca & Pasang Surut */}
+        <div className="bg-surface-container rounded-xl border border-outline-variant/20 p-4 lg:p-6 mb-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-on-surface">Cuaca &amp; Pasang Surut</h3>
+              <p className="text-[11px] text-on-surface-variant mt-0.5">Widget di halaman depan (data gratis dari Open-Meteo).</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => update({ showWeather: !form.showWeather })}
+              className={`relative w-11 h-6 rounded-full transition-colors ${form.showWeather ? 'bg-primary' : 'bg-surface-container-high border border-outline-variant/30'}`}
+            >
+              <span className={`absolute top-0.5 ${form.showWeather ? 'right-0.5' : 'left-0.5'} w-5 h-5 rounded-full bg-white transition-all`} />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between pt-1">
+            <div>
+              <h3 className="text-sm font-bold text-on-surface">Lokasi Otomatis (GPS HP)</h3>
+              <p className="text-[11px] text-on-surface-variant mt-0.5">
+                Pakai lokasi perangkat pengunjung. Jika ditolak, pakai koordinat manual di bawah.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => update({ locationMode: form.locationMode === 'auto' ? 'manual' : 'auto' })}
+              className={`relative w-11 h-6 rounded-full transition-colors ${form.locationMode === 'auto' ? 'bg-primary' : 'bg-surface-container-high border border-outline-variant/30'}`}
+            >
+              <span className={`absolute top-0.5 ${form.locationMode === 'auto' ? 'right-0.5' : 'left-0.5'} w-5 h-5 rounded-full bg-white transition-all`} />
+            </button>
+          </div>
+
+          <div>
+            <label className="block text-on-surface-variant text-xs font-medium mb-1.5 uppercase tracking-wider">Nama Lokasi</label>
+            <input
+              type="text"
+              value={form.locationName}
+              onChange={(e) => update({ locationName: e.target.value })}
+              className="w-full bg-surface-container-high border border-outline-variant/30 rounded-xl px-4 py-3 text-on-surface text-sm focus:outline-none focus:border-primary/50 transition-all"
+              placeholder="contoh: Labuhan Maringgai, Lampung Timur"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-on-surface-variant text-xs font-medium mb-1.5 uppercase tracking-wider">Latitude</label>
+              <input
+                type="number"
+                step="0.0001"
+                value={form.latitude}
+                onChange={(e) => update({ latitude: e.target.value })}
+                className="w-full bg-surface-container-high border border-outline-variant/30 rounded-xl px-4 py-3 text-on-surface text-sm focus:outline-none focus:border-primary/50 transition-all"
+                placeholder="-5.3833"
+              />
+            </div>
+            <div>
+              <label className="block text-on-surface-variant text-xs font-medium mb-1.5 uppercase tracking-wider">Longitude</label>
+              <input
+                type="number"
+                step="0.0001"
+                value={form.longitude}
+                onChange={(e) => update({ longitude: e.target.value })}
+                className="w-full bg-surface-container-high border border-outline-variant/30 rounded-xl px-4 py-3 text-on-surface text-sm focus:outline-none focus:border-primary/50 transition-all"
+                placeholder="105.4667"
+              />
+            </div>
+          </div>
+          <p className="text-[11px] text-on-surface-variant">Ambil koordinat dari Google Maps: klik kanan lokasi → "What's here?" → salin latitude/longitude.</p>
+        </div>
       </div>
     </div>
   );

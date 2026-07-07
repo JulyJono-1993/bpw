@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 const navItems = [
   { icon: 'home', label: 'Home', path: '/' },
+  { icon: 'water_drop', label: 'Cuaca', path: '/cuaca' },
   { icon: 'newspaper', label: 'Berita', path: '/berita' },
   { icon: 'info', label: 'Info', path: '/info' },
   { icon: 'admin_panel_settings', label: 'Admin', path: '/admin' },

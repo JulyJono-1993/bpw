@@ -59,6 +59,11 @@ export interface SiteSettings {
   primaryColor: string;
   secondaryColor: string;
   backgroundColor: string;
+  locationName: string;
+  latitude: string;
+  longitude: string;
+  locationMode: 'manual' | 'auto';
+  showWeather: boolean;
 }
 
 export interface AdminAccount {
@@ -99,6 +104,11 @@ const DEFAULT_SETTINGS: SiteSettings = {
   primaryColor: '#00dddd',
   secondaryColor: '#89ceff',
   backgroundColor: '#0b1326',
+  locationName: 'Labuhan Maringgai, Lampung Timur',
+  latitude: '-5.3833',
+  longitude: '105.4667',
+  locationMode: 'manual',
+  showWeather: true,
 };
 
 async function sha256Hex(text: string): Promise<string> {

@@ -8,6 +8,7 @@ import InfoPage from './pages/InfoPage';
 import DataPanenPage from './pages/DataPanenPage';
 import HargaUdangPage from './pages/HargaUdangPage';
 import Investasi1000Page from './pages/Investasi1000Page';
+import CuacaPage from './pages/CuacaPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminLayout from './pages/admin/AdminLayout';
 import DashboardPage from './pages/admin/DashboardPage';
@@ -62,6 +63,7 @@ function AppContent() {
           <Route path="/data-panen" element={<DataPanenPage />} />
           <Route path="/harga-udang" element={<HargaUdangPage />} />
           <Route path="/investasi-1000" element={<Investasi1000Page />} />
+          <Route path="/cuaca" element={<CuacaPage />} />
 
           {/* Admin Login */}
           <Route path="/admin" element={<AdminLoginPage />} />
