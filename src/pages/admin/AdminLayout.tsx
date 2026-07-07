@@ -10,6 +10,7 @@ const menuItems = [
   { icon: 'campaign', label: 'Promosi', path: '/admin/promos' },
   { icon: 'info', label: 'Info', path: '/admin/info' },
   { icon: 'tune', label: 'Pengaturan', path: '/admin/settings' },
+  { icon: 'download', label: 'Download Data', path: '/admin/download' },
   { icon: 'manage_accounts', label: 'Akun Admin', path: '/admin/accounts' },
 ];
 

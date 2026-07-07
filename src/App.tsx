@@ -20,6 +20,7 @@ import PromosAdmin from './pages/admin/PromosAdmin';
 import InfoAdmin from './pages/admin/InfoAdmin';
 import SettingsAdmin from './pages/admin/SettingsAdmin';
 import AccountsAdmin from './pages/admin/AccountsAdmin';
+import DownloadAdmin from './pages/admin/DownloadAdmin';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAppContext();
@@ -85,6 +86,7 @@ function AppContent() {
             <Route path="promos" element={<PromosAdmin />} />
             <Route path="info" element={<InfoAdmin />} />
             <Route path="settings" element={<SettingsAdmin />} />
+            <Route path="download" element={<DownloadAdmin />} />
             <Route path="accounts" element={<AccountsAdmin />} />
           </Route>
         </Routes>
