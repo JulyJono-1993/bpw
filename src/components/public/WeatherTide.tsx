@@ -222,8 +222,8 @@ export default function WeatherTide({ variant = 'widget' }: { variant?: 'widget'
           )}
         </div>
 
-        {/* Prakiraan 7 hari */}
-        {daily.length > 0 && (
+        {/* Prakiraan 7 hari (lengkap hanya di halaman /cuaca) */}
+        {variant === 'page' && daily.length > 0 && (
           <div className="border-t border-outline-variant/20 px-2 py-1">
             {daily.map((d) => {
               const dw = weatherInfo(d.code);
