@@ -15,6 +15,32 @@ export default function SettingsAdmin() {
   const { settings, setSettings } = useAppContext();
   const [form, setForm] = useState<SiteSettings>(settings);
   const [saved, setSaved] = useState(false);
+  const [locating, setLocating] = useState(false);
+
+  const detectLocation = () => {
+    if (typeof navigator === 'undefined' || !('geolocation' in navigator)) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const la = String(pos.coords.latitude);
+        const lo = String(pos.coords.longitude);
+        let name = `${la}, ${lo}`;
+        try {
+          const r = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${la}&longitude=${lo}&localityLanguage=id`
+          ).then((x) => x.json());
+          const parts = [r.locality, r.city, r.principalSubdivision, r.countryName].filter(Boolean);
+          if (parts.length) name = parts.join(', ');
+        } catch {
+          /* biarkan nama berupa koordinat */
+        }
+        update({ latitude: la, longitude: lo, locationName: name });
+        setLocating(false);
+      },
+      () => setLocating(false),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   const update = (patch: Partial<SiteSettings>) => {
     const next = { ...form, ...patch };
@@ -174,18 +200,22 @@ export default function SettingsAdmin() {
           </div>
 
           <div className="flex items-center justify-between pt-1">
-            <div>
-              <h3 className="text-sm font-bold text-on-surface">Lokasi Otomatis (GPS HP)</h3>
+            <div className="min-w-0">
+              <h3 className="text-sm font-bold text-on-surface">Koordinat Lokasi</h3>
               <p className="text-[11px] text-on-surface-variant mt-0.5">
-                Pakai lokasi perangkat pengunjung. Jika ditolak, pakai koordinat manual di bawah.
+                Isi manual, atau pakai GPS HP Anda (admin) untuk mengisinya otomatis.
               </p>
             </div>
             <button
               type="button"
-              onClick={() => update({ locationMode: form.locationMode === 'auto' ? 'manual' : 'auto' })}
-              className={`relative w-11 h-6 rounded-full transition-colors ${form.locationMode === 'auto' ? 'bg-primary' : 'bg-surface-container-high border border-outline-variant/30'}`}
+              onClick={detectLocation}
+              disabled={locating}
+              className="flex items-center gap-1.5 bg-primary/15 text-primary px-3 py-2 rounded-xl text-xs font-bold active:scale-95 transition-all disabled:opacity-60"
             >
-              <span className={`absolute top-0.5 ${form.locationMode === 'auto' ? 'right-0.5' : 'left-0.5'} w-5 h-5 rounded-full bg-white transition-all`} />
+              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
+                {locating ? 'progress_activity' : 'my_location'}
+              </span>
+              {locating ? 'Mendeteksi…' : 'Lokasi Saya'}
             </button>
           </div>
 

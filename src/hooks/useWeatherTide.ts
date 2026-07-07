@@ -80,55 +80,20 @@ function cacheKey(lat: string, lng: string): string {
 export function useWeatherTide(opts: {
   lat: string;
   lng: string;
-  auto: boolean;
   enabled: boolean;
   locationName?: string;
 }): UseWeatherTideResult {
-  const { lat, lng, auto, enabled, locationName } = opts;
+  const { lat, lng, enabled, locationName } = opts;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tideError, setTideError] = useState(false);
   const [data, setData] = useState<WeatherTideData>(EMPTY);
-  const [coords, setCoords] = useState<{ lat: string; lng: string } | null>(
-    auto ? null : { lat, lng }
-  );
   const reqId = useRef(0);
 
-  // Resolusi lokasi: auto -> pakai GPS HP, manual -> pakai koordinat settings.
-  useEffect(() => {
-    if (!auto) {
-      setCoords({ lat, lng });
-      return;
-    }
-    if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
-      setCoords({ lat, lng });
-      return;
-    }
-    let cancelled = false;
-    setCoords(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        if (cancelled) return;
-        setCoords({
-          lat: String(pos.coords.latitude),
-          lng: String(pos.coords.longitude),
-        });
-      },
-      () => {
-        // Ditolak/error -> fallback ke koordinat manual.
-        if (!cancelled) setCoords({ lat, lng });
-      },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 5 * 60 * 1000 }
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, [auto, lat, lng]);
-
   const load = useCallback(async () => {
-    if (!coords) return; // masih menunggu GPS
-    const { lat: clat, lng: clng } = coords;
     if (!enabled) return;
+    const clat = lat;
+    const clng = lng;
     if (!clat || !clng) {
       setError('Lokasi cuaca belum diatur di Panel Admin.');
       setLoading(false);
@@ -265,7 +230,7 @@ export function useWeatherTide(opts: {
     } finally {
       if (id === reqId.current) setLoading(false);
     }
-  }, [coords, enabled, lat, lng, locationName]);
+  }, [enabled, lat, lng, locationName]);
 
   useEffect(() => {
     void load();

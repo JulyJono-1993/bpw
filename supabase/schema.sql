@@ -217,7 +217,6 @@ create table if not exists site_settings (
    "locationName"  text,
    "latitude"      text,
    "longitude"     text,
-   "locationMode"  text default 'manual',
    "showWeather"   boolean default true
 );
 
@@ -226,7 +225,6 @@ alter table site_settings add column if not exists "backgroundColor" text;
 alter table site_settings add column if not exists "locationName" text;
 alter table site_settings add column if not exists "latitude" text;
 alter table site_settings add column if not exists "longitude" text;
-alter table site_settings add column if not exists "locationMode" text default 'manual';
 alter table site_settings add column if not exists "showWeather" boolean default true;
 
 alter table site_settings enable row level security;

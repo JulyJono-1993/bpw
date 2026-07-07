@@ -75,12 +75,10 @@ function StatChip({ icon, label, value }: { icon: string; label: string; value: 
 
 export default function WeatherTide({ variant = 'widget' }: { variant?: 'widget' | 'page' }) {
   const { settings } = useAppContext();
-  const { latitude: lat, longitude: lng, showWeather, locationName, locationMode } = settings;
-  const auto = locationMode === 'auto';
+  const { latitude: lat, longitude: lng, showWeather, locationName } = settings;
   const { loading, error, data, tideError, refresh } = useWeatherTide({
     lat,
     lng,
-    auto,
     enabled: showWeather,
     locationName,
   });
@@ -94,9 +92,6 @@ export default function WeatherTide({ variant = 'widget' }: { variant?: 'widget'
           <div className="h-4 w-40 bg-surface-container-high rounded" />
           <div className="h-16 w-full bg-surface-container-high rounded-xl" />
           <div className="h-16 w-full bg-surface-container-high rounded-xl" />
-          {auto && (
-            <p className="text-[11px] text-on-surface-variant">Mendeteksi lokasi perangkat…</p>
-          )}
         </div>
       </section>
     );

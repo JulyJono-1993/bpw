@@ -62,7 +62,6 @@ export interface SiteSettings {
   locationName: string;
   latitude: string;
   longitude: string;
-  locationMode: 'manual' | 'auto';
   showWeather: boolean;
 }
 
@@ -107,7 +106,6 @@ const DEFAULT_SETTINGS: SiteSettings = {
   locationName: 'Labuhan Maringgai, Lampung Timur',
   latitude: '-5.3833',
   longitude: '105.4667',
-  locationMode: 'manual',
   showWeather: true,
 };
 
