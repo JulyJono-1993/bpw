@@ -105,7 +105,7 @@ export function useWeatherTide(opts: {
 
     const wxUrl =
       `https://api.open-meteo.com/v1/forecast?latitude=${clat}&longitude=${clng}` +
-      `&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,wind_direction_10m,sunrise,sunset` +
+      `&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,wind_direction_10m` +
       `&hourly=temperature_2m,weather_code,precipitation_probability` +
       `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,sunrise,sunset` +
       `&timezone=Asia/Jakarta&forecast_days=7`;
@@ -170,8 +170,8 @@ export function useWeatherTide(opts: {
         windDir: c.wind_direction_10m,
         precip: c.precipitation,
         isDay: c.is_day === 1,
-        sunrise: c.sunrise,
-        sunset: c.sunset,
+        sunrise: w.daily?.sunrise?.[0] ?? '',
+        sunset: w.daily?.sunset?.[0] ?? '',
       };
 
       // ---- Pasang Surut (opsional) ----
