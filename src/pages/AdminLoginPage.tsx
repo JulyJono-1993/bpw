@@ -1,42 +1,35 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../store/AppContext';
 
 export default function AdminLoginPage() {
-  const { isAuthenticated, login, settings } = useAppContext();
+  const { isAuthenticated, login, authLoading, settings } = useAppContext();
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/admin/dashboard', { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
+  if (isAuthenticated) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!username || !password) {
-      setError('Username dan password harus diisi');
+    if (!email || !password) {
+      setError('Email dan password harus diisi');
       return;
     }
-    const success = await login(username, password);
+    const success = await login(email, password);
     if (success) {
       navigate('/admin/dashboard', { replace: true });
     } else {
-      setError('Username atau password salah');
+      setError('Email atau password salah');
     }
   };
-
-  if (isAuthenticated) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8 lg:py-12">
       <div className="w-full max-w-sm lg:max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="bg-primary/10 w-20 h-20 lg:w-24 lg:h-24 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <span className="material-symbols-outlined text-primary" style={{ fontSize: '40px' }}>
@@ -49,7 +42,6 @@ export default function AdminLoginPage() {
           </p>
         </div>
 
-        {/* Login Form */}
         <div className="bg-surface-container rounded-2xl border border-outline-variant/20 p-6 lg:p-8">
           <form onSubmit={handleSubmit} className="space-y-4 lg:space-y-5">
             {error && (
@@ -61,18 +53,18 @@ export default function AdminLoginPage() {
 
             <div>
               <label className="block text-on-surface-variant text-xs font-medium mb-1.5 uppercase tracking-wider">
-                Username
+                Email
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant/50" style={{ fontSize: '20px' }}>
-                  person
+                  email
                 </span>
                 <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-surface-container-high border border-outline-variant/30 rounded-xl pl-10 pr-4 py-3 text-on-surface text-sm focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-all placeholder:text-on-surface-variant/30"
-                  placeholder="Masukkan username"
+                  placeholder="Masukkan email"
                 />
               </div>
             </div>
@@ -106,28 +98,22 @@ export default function AdminLoginPage() {
 
             <button
               type="submit"
-              className="w-full bg-primary text-on-primary-container font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-all shadow-lg shadow-primary/20 hover:shadow-primary/30 mt-2"
+              disabled={authLoading}
+              className="w-full bg-primary text-on-primary-container font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-all shadow-lg shadow-primary/20 hover:shadow-primary/30 mt-2 disabled:opacity-60 disabled:active:scale-100"
             >
-              Masuk
+              {authLoading ? 'Memuat...' : 'Masuk'}
             </button>
           </form>
-        </div>
 
-        <div className="mt-6 bg-surface-container rounded-xl border border-outline-variant/20 p-4">
-          <p className="text-on-surface-variant text-xs text-center">
-            <span className="material-symbols-outlined align-middle mr-1" style={{ fontSize: '14px' }}>info</span>
-            Demo: username <span className="text-primary font-mono font-bold">admin</span> / password <span className="text-primary font-mono font-bold">bpw2024udang</span>
-          </p>
-        </div>
-
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => navigate('/')}
-            className="text-on-surface-variant text-sm hover:text-primary transition-colors inline-flex items-center gap-1"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_back</span>
-            Kembali ke Website
-          </button>
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => navigate('/')}
+              className="text-on-surface-variant text-sm hover:text-primary transition-colors inline-flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_back</span>
+              Kembali ke Website
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -32,11 +32,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AppContent() {
   const location = useLocation();
-  const { loading } = useAppContext();
+  const { loading, authLoading } = useAppContext();
   const isAdminPanel = location.pathname.startsWith('/admin/');
   const isAdminLogin = location.pathname === '/admin';
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <span className="material-symbols-outlined text-primary animate-spin" style={{ fontSize: '40px' }}>

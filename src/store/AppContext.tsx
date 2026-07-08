@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, signInWithPassword, signOut, getSession, onAuthStateChange, type Session } from '../lib/supabase';
 import { applyTheme } from '../lib/theme';
 
 export interface Banner {
@@ -65,9 +65,16 @@ export interface SiteSettings {
   showWeather: boolean;
 }
 
-export interface AdminAccount {
-  id: string;
-  username: string;
+export interface AdminUser {
+  user_id: string;
+  email: string;
+  role: string;
+}
+
+interface AdminProfile {
+  user_id: string;
+  email: string;
+  role: string;
 }
 
 interface AppState {
@@ -78,14 +85,15 @@ interface AppState {
   infoItems: InfoItem[];
   harvestData: HarvestData[];
   settings: SiteSettings;
-  admins: AdminAccount[];
+  adminUsers: AdminUser[];
   isAuthenticated: boolean;
   loading: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  authLoading: boolean;
+  adminProfile: AdminProfile | null;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
   refresh: () => Promise<void>;
-  addAdmin: (username: string, password: string) => Promise<boolean>;
-  deleteAdmin: (id: string) => Promise<boolean>;
+  removeAdmin: (userId: string) => Promise<boolean>;
   setSettings: (settings: SiteSettings) => void;
   setBanners: (banners: Banner[]) => void;
   setShrimpPrices: (prices: ShrimpPrice[]) => void;
@@ -95,7 +103,6 @@ interface AppState {
   setHarvestData: (data: HarvestData[]) => void;
 }
 
-const AUTH_KEY = 'bpw_p3uw_auth';
 const DEFAULT_SETTINGS: SiteSettings = {
   id: 'default',
   orgName: 'BPW P3UW',
@@ -108,14 +115,6 @@ const DEFAULT_SETTINGS: SiteSettings = {
   longitude: '105.4667',
   showWeather: true,
 };
-
-async function sha256Hex(text: string): Promise<string> {
-  const data = new TextEncoder().encode(text);
-  const digest = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-}
 
 const AppContext = createContext<AppState | undefined>(undefined);
 
@@ -137,11 +136,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [infoItems, setInfoItemsState] = useState<InfoItem[]>([]);
   const [harvestData, setHarvestDataState] = useState<HarvestData[]>([]);
   const [settings, setSettingsState] = useState<SiteSettings>(DEFAULT_SETTINGS);
-  const [admins, setAdminsState] = useState<AdminAccount[]>([]);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() =>
-    localStorage.getItem(AUTH_KEY) === 'true'
-  );
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
+  const [session, setSessionState] = useState<Session | null>(null);
+  const [adminProfile, setAdminProfile] = useState<AdminProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
 
   const dataRef = useRef({
     banners: [] as Banner[],
@@ -152,7 +151,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     harvestData: [] as HarvestData[],
   });
 
-  // Terapkan tema & judul setiap kali pengaturan berubah
+  const isAuthenticated = !!(session && adminProfile);
+
   useEffect(() => {
     applyTheme(settings.primaryColor, settings.secondaryColor, settings.backgroundColor);
     document.title = settings.orgName
@@ -162,7 +162,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function loadAll() {
     try {
-      const [b, p, n, pr, i, h, s, a] = await Promise.all([
+      const [b, p, n, pr, i, h, s] = await Promise.all([
         supabase.from('banners').select('*'),
         supabase.from('shrimp_prices').select('*'),
         supabase.from('news').select('*'),
@@ -170,7 +170,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         supabase.from('info_items').select('*'),
         supabase.from('harvest_data').select('*'),
         supabase.from('site_settings').select('*').limit(1).maybeSingle(),
-        supabase.from('admins').select('id, username'),
       ]);
 
       if (b.data) { setBannersState(b.data as Banner[]); dataRef.current.banners = b.data as Banner[]; }
@@ -180,7 +179,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (i.data) { setInfoItemsState(i.data as InfoItem[]); dataRef.current.infoItems = i.data as InfoItem[]; }
       if (h.data) { setHarvestDataState(h.data as HarvestData[]); dataRef.current.harvestData = h.data as HarvestData[]; }
       if (s.data) setSettingsState(s.data as SiteSettings);
-      if (a.data) setAdminsState(a.data as AdminAccount[]);
+
+      try {
+        const { data: adminList } = await supabase.from('admin_users').select('user_id, email, role');
+        if (adminList) setAdminUsers(adminList as AdminUser[]);
+      } catch (adminError) {
+        console.warn('Gagal memuat daftar admin:', adminError);
+      }
     } catch (e) {
       console.error('Failed to load data from Supabase:', e);
     } finally {
@@ -190,11 +195,61 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     loadAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Terima perubahan settings secara realtime agar semua tab/instance
-  // (admin maupun website utama) ikut berubah tanpa perlu refresh.
+  useEffect(() => {
+    const { data: listener } = onAuthStateChange(async (_event, session) => {
+      setSessionState(session);
+      setAuthLoading(false);
+
+      if (session?.user) {
+        try {
+          const { data } = await supabase
+            .from('admin_users')
+            .select('user_id, email, role')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+          setAdminProfile(data as AdminProfile | null);
+        } catch (e) {
+          console.warn('Gagal memuat profil admin:', e);
+          setAdminProfile(null);
+        }
+      } else {
+        setAdminProfile(null);
+      }
+    });
+
+    const initSession = async () => {
+      try {
+        const { data } = await getSession();
+        setSessionState(data.session);
+        if (data.session?.user) {
+          try {
+            const { data: profile } = await supabase
+              .from('admin_users')
+              .select('user_id, email, role')
+              .eq('user_id', data.session.user.id)
+              .maybeSingle();
+            setAdminProfile(profile as AdminProfile | null);
+          } catch (e) {
+            console.warn('Gagal memuat profil admin saat init:', e);
+            setAdminProfile(null);
+          }
+        }
+      } catch (e) {
+        console.error('Gagal inisialisasi sesi:', e);
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+
+    initSession();
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
   useEffect(() => {
     const channel = supabase
       .channel('public:site_settings')
@@ -251,68 +306,49 @@ export function AppProvider({ children }: { children: ReactNode }) {
       );
   };
 
-  const login = async (username: string, password: string): Promise<boolean> => {
-    if (!username || !password) return false;
+  const login = async (email: string, password: string): Promise<boolean> => {
+    setAuthLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('admins')
-        .select('*')
-        .eq('username', username)
-        .maybeSingle();
-      if (error) throw error;
-      if (!data) return false;
-      const hash = await sha256Hex(password);
-      if (hash === data.password_hash) {
-        setIsAuthenticated(true);
-        localStorage.setItem(AUTH_KEY, 'true');
-        return true;
+      const { data, error } = await signInWithPassword(email, password);
+      if (error || !data.user) {
+        console.error('Login failed:', error);
+        setAuthLoading(false);
+        return false;
       }
+      const { data: profile } = await supabase
+        .from('admin_users')
+        .select('user_id, email, role')
+        .eq('user_id', data.user.id)
+        .maybeSingle();
+      setAdminProfile(profile as AdminProfile | null);
+      setAuthLoading(false);
+      return !!profile;
     } catch (e) {
       console.error('Login failed:', e);
-    }
-    return false;
-  };
-
-  const addAdmin = async (username: string, password: string): Promise<boolean> => {
-    if (!username || !password) return false;
-    try {
-      const hash = await sha256Hex(password);
-      const { data, error } = await supabase
-        .from('admins')
-        .insert({ username, password_hash: hash })
-        .select('id, username')
-        .single();
-      if (error) {
-        console.error('Add admin failed:', error);
-        return false;
-      }
-      setAdminsState((prev) => [data as AdminAccount, ...prev]);
-      return true;
-    } catch (e) {
-      console.error('Add admin failed:', e);
+      setAuthLoading(false);
       return false;
     }
   };
 
-  const deleteAdmin = async (id: string): Promise<boolean> => {
-    if (admins.length <= 1) return false; // jangan hapus akun terakhir
-    try {
-      const { error } = await supabase.from('admins').delete().eq('id', id);
-      if (error) {
-        console.error('Delete admin failed:', error);
-        return false;
-      }
-      setAdminsState((prev) => prev.filter((a) => a.id !== id));
-      return true;
-    } catch (e) {
-      console.error('Delete admin failed:', e);
-      return false;
-    }
+  const logout = async () => {
+    await signOut();
+    setAdminProfile(null);
+    setSessionState(null);
   };
 
-  const logout = () => {
-    setIsAuthenticated(false);
-    localStorage.removeItem(AUTH_KEY);
+  const removeAdmin = async (userId: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase.from('admin_users').delete().eq('user_id', userId);
+      if (error) throw error;
+      setAdminUsers((prev) => prev.filter((a) => a.user_id !== userId));
+      if (adminProfile?.user_id === userId) {
+        await logout();
+      }
+      return true;
+    } catch (e) {
+      console.error('Gagal menghapus akun admin:', e);
+      return false;
+    }
   };
 
   const refresh = async () => { await loadAll(); };
@@ -321,8 +357,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <AppContext.Provider
       value={{
         banners, shrimpPrices, news, promos, infoItems, harvestData,
-        settings, admins, isAuthenticated, loading, login, logout, refresh,
-        addAdmin, deleteAdmin, setSettings,
+        settings, adminUsers, isAuthenticated, loading, authLoading, login, logout, refresh,
+        adminProfile, removeAdmin,
+        setSettings,
         setBanners, setShrimpPrices, setNews, setPromos, setInfoItems, setHarvestData,
       }}
     >
