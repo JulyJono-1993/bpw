@@ -151,6 +151,13 @@ export default function AdminLayout() {
             <Outlet />
           </div>
         </main>
+
+        {/* Footer Admin Panel */}
+        <footer className="border-t border-outline-variant/30 px-4 lg:px-8 py-4 text-center">
+          <p className="text-[11px] text-on-surface-variant">
+            Built with ❤️ by JulyJono using Vibe Coding
+          </p>
+        </footer>
       </div>
     </div>
   );
