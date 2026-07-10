@@ -12,6 +12,7 @@ const menuItems = [
   { icon: 'tune', label: 'Pengaturan', path: '/admin/settings' },
   { icon: 'download', label: 'Download Data', path: '/admin/download' },
   { icon: 'manage_accounts', label: 'Akun Admin', path: '/admin/accounts' },
+  { icon: 'backup', label: 'Backup & Restore', path: '/admin/backup' },
 ];
 
 export default function AdminLayout() {

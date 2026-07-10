@@ -21,6 +21,7 @@ import InfoAdmin from './pages/admin/InfoAdmin';
 import SettingsAdmin from './pages/admin/SettingsAdmin';
 import AccountsAdmin from './pages/admin/AccountsAdmin';
 import DownloadAdmin from './pages/admin/DownloadAdmin';
+import BackupAdmin from './pages/admin/BackupAdmin';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAppContext();
@@ -88,6 +89,7 @@ function AppContent() {
             <Route path="settings" element={<SettingsAdmin />} />
             <Route path="download" element={<DownloadAdmin />} />
             <Route path="accounts" element={<AccountsAdmin />} />
+            <Route path="backup" element={<BackupAdmin />} />
           </Route>
         </Routes>
       </main>
